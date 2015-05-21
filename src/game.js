@@ -4,9 +4,15 @@ var Game = function (canvasid) {
     var canvas = document.getElementById(canvasid);
     this.context = canvas.getContext("2d");
 
+    var offscreenCanvas = document.createElement('canvas');
+    offscreenCanvas.width = canvas.width;
+    offscreenCanvas.height = canvas.height;
+    this.offscreenContext = offscreenCanvas.getContext('2d');
+
     this.startTime = 0;
     this.lastTime = 0;
     this.gameTime = 0;
+    this.fpsTime = 0;
     this.fps = 0;
 
     this.contentRoot = '';
@@ -27,7 +33,11 @@ Game.prototype = {
     },
 
     getFps: function () {
-        return this.fps;
+        return this.fps.toFixed(2);
+    },
+
+    getGameTime:function(){
+        return (this.gameTime/1000).toFixed(2);
     },
 
     windowToCanvas: function (x, y) {
@@ -43,7 +53,7 @@ Game.prototype = {
     start: function () {
         var self = this;
         this.startTime = this.getCurrentTime();
-        this.init(this.context);
+        this.init(this.offscreenContext);
 
         window.requestNextAnimationFrame(function (time) {
             self.animate.call(self, time);
@@ -54,17 +64,23 @@ Game.prototype = {
     animate: function (time) {
         var self = this;
 
-        if (this.lastTime == 0)
+        if (this.lastTime == 0) {
             this.fps = 60;
-        else
-            this.fps = 1000 / (time - this.lastTime);
+        }
+        else {
+            if (this.gameTime - this.fpsTime > 1000) {
+                this.fps = 1000 / (time - this.lastTime);
+                this.fpsTime = this.gameTime;
+            }
+        }
 
         this.gameTime = this.getCurrentTime() - this.startTime;
         this.lastTime = time;
 
         this.update(time);
         this.clearCanvas();
-        this.render(this.context);
+        this.render(this.offscreenContext);
+        this.flip();
 
         window.requestNextAnimationFrame(function (time) {
             self.animate.call(self, time);
@@ -73,24 +89,32 @@ Game.prototype = {
 
     //clear canvas
     clearCanvas: function () {
+        this.offscreenContext.clearRect(0, 0,
+            this.offscreenContext.canvas.width, this.offscreenContext.canvas.height);
         this.context.clearRect(0, 0,
             this.context.canvas.width, this.context.canvas.height);
     },
 
+    //flip
+    flip: function () {
+        this.context.drawImage(this.offscreenContext.canvas, 0, 0, this.offscreenContext.canvas.width, this.offscreenContext.canvas.height);
+    },
+
     //load texture
     loadTexture: function (textureUrl) {
-        var image = new Image();
-        image.src = this.contentRoot + '/' + textureUrl;
         self = this;
 
-        //image.addEventListener('load', function (e) {
-        //    self.textureLoadEvent(e);
-        //});
+        var image = new Image();
 
-        image.addEventListener('error', function (e) {
-            self.textureErrorEvent(textureUrl, e);
+        image.addEventListener('load', function (e) {        
+          
         });
 
+        image.addEventListener('error', function (e) {
+            alert(url + e);
+        });
+
+        image.src = this.contentRoot + '/' + textureUrl;
         this.textures[textureUrl] = image;
     },
 
@@ -103,10 +127,6 @@ Game.prototype = {
     init: function (context) { },
     update: function (time) { },
     render: function (context) { },
-
-    //events
-    textureLoadedEvent: function (e) { },
-    textureErrorEvent: function (url, e) { alert(url + e); },
 
     //input
 

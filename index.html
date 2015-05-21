@@ -2,16 +2,86 @@
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="utf-8" />
-    <title>3dmap demo</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>MyRaycasting programming by hwl</title>
+    <style>
+        body {
+            font: 14px 'Microsoft YaHei';
+        }
+        #debug {
+            margin-top:20px;
+            clear:left;
+        }
 
+        #debug_title .info{
+            border:1px solid #5c5858;
+            background-color:olivedrab;
+        }
+        #debug .info{
+            font-size:13px;
+            background-color:#ffd800;
+            line-height:150%;
+        }
+        .info{
+            border:1px solid #ff6a00;
+            width:160px;
+            margin-right:1px;
+            margin-bottom:1px;
+            float:left;
+        }
+        #debug .info span{
+            color:#3e249a;
+        }
+    </style>
 </head>
 <body>
-    <canvas id="canvas" width="960" height="480">
-        少年，你的浏览器太旧！
+    <canvas id="canvas" width="480" height="320">
+        你的浏览器版本太低，不支持HTML5，请升级浏览器到最新版本然后重新运行!
     </canvas>
+
+    <div>
+        <div id="debug_title">
+            <div class="info">Game</div>
+            <div class="info">RayCaster</div>
+
+            <div class="info">Viewer</div>
+            <div class="info">Map</div>
+        </div>
+
+        <div id="debug">
+            <div class="info">
+                fps:<span id="fpsvalue"></span><br />
+                gameTime:<span id="gametime"></span>(s)
+            </div>
+            <div class="info">
+                x:<span id="planex"></span><br />
+                y:<span id="planey"></span><br />
+                width:<span id="planewidth"></span><br />
+                height:<span id="planeheight"></span><br />
+                viewer2plane:<span id="planetoviewer"></span><br />
+                deltaRay:<span id="planeray"></span>(°)
+            </div>
+            <div class="info">
+                x:<span id="viewerx"></span><br />
+                y:<span id="viewery"></span><br />
+                angle:<span id="viewera"></span>(°)<br />
+                fov:<span id="viewerf"></span>(°)<br />
+                height:<span id="viewerh"></span>
+            </div>
+            <div class="info">
+                width:<span id="mapwidth"></span><br />
+                height:<span id="mapheight"></span><br />
+                gridSize:<span id="gridsize"></span>
+            </div>
+        </div>
+    </div>
+
     <script src="src/requestNextAnimationFrame.js"></script>
-    <script src="src/mapRayCaster.js"></script>
+    <script src="src/texture.js"></script>
+    <script src="src/gridMap.js"></script>
+    <script src="src/rayCaster.js"></script>
+    <script src="src/rayCasterRenderer.js"></script>
     <script src="src/game.js"></script>
     <script src="src/main.js"></script>
 </body>
