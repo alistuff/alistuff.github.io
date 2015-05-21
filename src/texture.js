@@ -23,15 +23,12 @@ Texture.fromUrl = function (fileUrl) {
 Texture.fromImage = function (image) {
     if (image == undefined)
         throw 'image undefined';
-  //  self = this;
+
     var newTexture = new Texture();
-    newTexture.buffer = newTexture.buffer || [];
-    newTexture.factor = newTexture.factor || {};
+    newTexture.buffer = [];
+    newTexture.factor = {};
 
-    alert(image.width);
-
-  //  image.addEventListener('load', function (e) {
-
+    image.onload = function (e) {
         newTexture.width = image.width;
         newTexture.height = image.height;
         newTexture.complete = image.complete;
@@ -41,10 +38,10 @@ Texture.fromImage = function (image) {
         ctx.canvas.height = image.height;
         ctx.drawImage(image, 0, 0);
 
-        var imageData = ctx.getImageData(0, 0, 64, 64);
+        var imageData = ctx.getImageData(0, 0, image.width, image.height);
         var data = imageData.data;
         var length = data.length;
-       
+
         for (var i = 0; i < length; i += 4) {
             newTexture.buffer[i] = data[i];
             newTexture.buffer[i + 1] = data[i + 1];
@@ -55,11 +52,14 @@ Texture.fromImage = function (image) {
         newTexture.deviceWidth = imageData.width;
         newTexture.deviceHeight = imageData.height;
 
-        newTexture.factor.x=newTexture.deviceWidth / newTexture.width;
-        newTexture.factor.y = newTexture.deviceHeight / newTexture.height;
 
-       // newTexture.onload();
- //   });
+        newTexture.factor.x = newTexture.deviceWidth / newTexture.width;
+        newTexture.factor.y = newTexture.deviceHeight / newTexture.height;
+        //newTexture.factor = {
+        //    x: newTexture.deviceWidth / newTexture.width,
+        //    y: newTexture.deviceHeight / newTexture.height
+        //};
+    };
 
     return newTexture;
 };
@@ -111,10 +111,6 @@ Texture.fromColor = function (width, height, color) {
 
 //
 Texture.prototype = {
-
-    //onload:function(){
-
-    //},
 
     getPixel: function (x, y) {
         x = Math.floor(x);
