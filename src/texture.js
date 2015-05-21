@@ -23,12 +23,14 @@ Texture.fromUrl = function (fileUrl) {
 Texture.fromImage = function (image) {
     if (image == undefined)
         throw 'image undefined';
-
+  //  self = this;
     var newTexture = new Texture();
     newTexture.buffer = newTexture.buffer || [];
     newTexture.factor = newTexture.factor || {};
 
-    image.addEventListener('load', function (e) {
+    alert(image.width);
+
+  //  image.addEventListener('load', function (e) {
 
         newTexture.width = image.width;
         newTexture.height = image.height;
@@ -54,8 +56,10 @@ Texture.fromImage = function (image) {
         newTexture.deviceHeight = imageData.height;
 
         newTexture.factor.x=newTexture.deviceWidth / newTexture.width;
-        newTexture.factor.y= newTexture.deviceHeight / newTexture.height;
-    });
+        newTexture.factor.y = newTexture.deviceHeight / newTexture.height;
+
+       // newTexture.onload();
+ //   });
 
     return newTexture;
 };
@@ -107,6 +111,10 @@ Texture.fromColor = function (width, height, color) {
 
 //
 Texture.prototype = {
+
+    //onload:function(){
+
+    //},
 
     getPixel: function (x, y) {
         x = Math.floor(x);
