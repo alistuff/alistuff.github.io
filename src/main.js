@@ -35,6 +35,10 @@ game.init = function (context) {
     texture = Texture.fromUrl('textures/tex1.png');
     texture.setEmboss();
 
+    texture.onload = function () {
+        alert(texture.width);
+    };
+
     texture1 = Texture.fromColor(70, 80, { r: 255, g: 0, b: 0, a: 255 });
     texture1.setAlpha(0.5);
 
@@ -103,9 +107,8 @@ game.render = function (context) {
         raycaster.render(context);
 
       //  context.fillRect(50,50,100,100)
-        texture.render(context, 100, 100);
-      //  texture1.render(context, 50, 50);
-   
+      //  texture.render(context, 100, 100);
+    //  texture1.render(context, 50, 50);
 };
 
 /*************************************************/
