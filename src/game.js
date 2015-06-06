@@ -1,172 +1,264 @@
-﻿//
-var Game = function (canvasid) {
-    self = this;
-    var canvas = document.getElementById(canvasid);
-    this.context = canvas.getContext("2d");
+﻿/*
+ * core stuff
+*/
+(function (core, gfx) {
+    /*
+     *Game
+    */
+    core.Game = function (canvasid) {
+        var canvas = document.getElementById(canvasid);
+        this.context = canvas.getContext('2d');
+        var offscreenCanvas = document.createElement('canvas');
+        offscreenCanvas.width = canvas.width;
+        offscreenCanvas.height = canvas.height;
+        this.offscreenContext = offscreenCanvas.getContext('2d');
 
-    var offscreenCanvas = document.createElement('canvas');
-    offscreenCanvas.width = canvas.width;
-    offscreenCanvas.height = canvas.height;
-    this.offscreenContext = offscreenCanvas.getContext('2d');
+        this.startTime = 0;
+        this.lastTime = 0;
+        this.gameTime = 0;
+        this.fpsTime = 0;
+        this.fps = 0;
 
-    this.startTime = 0;
-    this.lastTime = 0;
-    this.gameTime = 0;
-    this.fpsTime = 0;
-    this.fps = 0;
+        this.imagesQueue = [];
+        this.images = {};
+        this.succeedCounter = 0;
+        this.failedCounter = 0;
+        this.textures = {};
 
-    this.contentRoot = '';
-    this.textures = {};
-
-    this.keyboardListeners = [];
-    window.onkeydown = function (e) { self.keyPressed(e); };
-  //  window.onkeypress = function (e) { self.keyPressed(e); };
-
-    return this;
-}
-
-Game.prototype = {
-
-    //get current time
-    getCurrentTime: function () {
-        return +new Date();
-    },
-
-    getFps: function () {
-        return this.fps.toFixed(2);
-    },
-
-    getGameTime:function(){
-        return (this.gameTime/1000).toFixed(2);
-    },
-
-    windowToCanvas: function (x, y) {
-        var bounding = this.context.canvas.getBoundingClientRect();
-
-        return {
-            x: x - bounding.left * (this.context.canvas.width / bounding.width),
-            y: y - bounding.top * (this.context.canvas.height / bounding.height)
-        };
-    },
-
-    //start the game loop
-    start: function () {
-        var self = this;
-        this.startTime = this.getCurrentTime();
-        this.init(this.offscreenContext);
-
-        window.requestNextAnimationFrame(function (time) {
-            self.animate.call(self, time);
-        });
-    },
-
-    //game animate
-    animate: function (time) {
-        var self = this;
-
-        if (this.lastTime == 0) {
-            this.fps = 60;
-        }
-        else {
-            if (this.gameTime - this.fpsTime > 1000) {
-                this.fps = 1000 / (time - this.lastTime);
-                this.fpsTime = this.gameTime;
-            }
-        }
-
-        this.gameTime = this.getCurrentTime() - this.startTime;
-        this.lastTime = time;
-
-        this.update(time);
-        this.clearCanvas();
-        this.render(this.offscreenContext);
-        this.flip();
-
-        window.requestNextAnimationFrame(function (time) {
-            self.animate.call(self, time);
-        });
-    },
-
-    //clear canvas
-    clearCanvas: function () {
-        this.offscreenContext.clearRect(0, 0,
-            this.offscreenContext.canvas.width, this.offscreenContext.canvas.height);
-        this.context.clearRect(0, 0,
-            this.context.canvas.width, this.context.canvas.height);
-    },
-
-    //flip
-    flip: function () {
-        this.context.drawImage(this.offscreenContext.canvas, 0, 0, this.offscreenContext.canvas.width, this.offscreenContext.canvas.height);
-    },
-
-    //load texture
-    loadTexture: function (textureUrl) {
         self = this;
+        this.keyboardListeners = [];
+        window.onkeydown = function (e) { self.keyPressed(e); };
+        //window.onkeypress = function (e) { self.keyPressed(e); };
 
-        var image = new Image();
+        this.stateManager = undefined;
 
-        image.addEventListener('load', function (e) {        
-          
-        });
+        return this;
+    }
 
-        image.addEventListener('error', function (e) {
-            alert(url + e);
-        });
+    core.Game.prototype = {
 
-        image.src = this.contentRoot + '/' + textureUrl;
-        this.textures[textureUrl] = image;
-    },
+        getWidth:function(){
+            return this.context.canvas.width;
+        },
 
-    //get texture
-    getTexture: function (textureUrl) {
-        return this.textures[textureUrl];
-    },
+        getHeight:function(){
+            return this.context.canvas.height;
+        },
 
-    //delegates
-    init: function (context) { },
-    update: function (time) { },
-    render: function (context) { },
+        getCurrentTime: function () {
+            return +new Date();
+        },
 
-    //input
+        getFps: function () {
+            return this.fps.toFixed(2);
+        },
 
-    addMouseListener: function (type, listener) {
-        this.context.canvas.addEventListener(type, listener, false);
-    },
+        getGameTime: function () {
+            return (this.gameTime / 1000).toFixed(2);
+        },
 
-    addKeyListener: function (key,listener) {
-        this.keyboardListeners.push({key:key,listener:listener });
-    },
+        windowToCanvas: function (x, y) {
+            var bounding = this.context.canvas.getBoundingClientRect();
 
-    keyPressed: function (e) {
-        var key = undefined;
-        var listener = undefined;
+            return {
+                x: x - bounding.left * (this.context.canvas.width / bounding.width),
+                y: y - bounding.top * (this.context.canvas.height / bounding.height)
+            };
+        },
 
-        switch (e.keyCode) {
-            case 87: key = 'w'; break; 
-            case 65: key = 'a'; break; 
-            case 83: key = 's'; break; 
-            case 68: key = 'd'; break;
-            case 90: key = 'z'; break;
-            case 88: key = 'x'; break;
-            case 74: key = 'j'; break;
-            case 75: key = 'k'; break;
-            case 82: key = 'r'; break;
-            case 37: key = 'left'; break;
-            case 39: key = 'right'; break;
-            case 38: key = 'up'; break;
-            case 40: key = 'down'; break;
-            case 32: key = 'space'; break;
-            case 13: key = 'enter'; break;
-        }
+        start: function () {
+            this.stateManager = new core.StateManager(this);
+            this.startTime = this.getCurrentTime();
+            this.init(this.offscreenContext);
+            var self = this;
+            window.requestNextAnimationFrame(function (time) {
+                self.animate.call(self, time);
+            });
+        },
 
-        for (var i = 0; i < this.keyboardListeners.length; i++) {
-            var pair = this.keyboardListeners[i];
-            if (pair.key === key && pair.listener) {
-                pair.listener();
-                window.returnValue = false;
-                break;
+        animate: function (time) {
+            var self = this;
+            var delta = time - this.lastTime;
+
+            if (this.lastTime == 0) {
+                this.fps = 60;
+                delta = 1000/60;
             }
+            else {
+                if (this.gameTime - this.fpsTime > 1000) {
+                    this.fps = 1000 / (delta);
+                    this.fpsTime = this.gameTime;
+                }
+            }
+
+            this.gameTime = this.getCurrentTime() - this.startTime;
+            this.lastTime = time;
+
+            this.update(delta/1000);
+            this.clearCanvas();
+            this.render(this.offscreenContext);
+            this.flip();
+            
+            window.requestNextAnimationFrame(function (time) {
+                self.animate.call(self, time);
+            });
+        },
+
+        init: function (context) { },
+
+        update: function (time) { },
+
+        render: function (context) { },
+
+        clearCanvas: function () {
+            this.offscreenContext.clearRect(0, 0,
+                this.offscreenContext.canvas.width, this.offscreenContext.canvas.height);
+            this.context.clearRect(0, 0,
+                this.context.canvas.width, this.context.canvas.height);
+        },
+
+        flip: function () {
+            this.context.drawImage(this.offscreenContext.canvas, 0, 0, this.offscreenContext.canvas.width, this.offscreenContext.canvas.height);
+        },
+
+        queueImage: function (alias, imageUrl) {
+            this.imagesQueue.push({ alias: alias, url: imageUrl });
+        },
+
+        loadImages: function (loadCompletedCallback, load, error) {
+
+            var length = this.imagesQueue.length;
+            if (length === 0) {
+                loadCompletedCallback();
+            }
+
+            var self = this;
+            for (var i = 0; i < length; i++) {
+                var image = new Image();
+                var queueItem = this.imagesQueue[i];
+
+                image.addEventListener('load', function (i) {
+                    self.succeedCounter++;
+                    load && load(this.src + ' load success!');
+                    if (self.loadCompleted()) {
+                        loadCompletedCallback(self.succeedCounter == length ? true : false);
+                    }
+                });
+
+                image.addEventListener('error', function () {
+                    self.failedCounter++;
+                    error && error(this.src + ' load failure!');
+                    if (self.loadCompleted()) {
+                        loadCompletedCallback(false);
+                    }
+                });
+
+                image.src = queueItem.url;
+                this.images[queueItem.alias] = image;
+            }
+        },
+
+        loadCompleted: function () {
+            return (this.succeedCounter + this.failedCounter) == this.imagesQueue.length;
+        },
+
+        getImage: function (alias) {
+            return this.images[alias];
+        },
+
+        getTexture: function (alias) {
+            if (this.textures[alias] == undefined)
+                this.textures[alias] = gfx.Texture.fromImage(this.getImage(alias));
+            return this.textures[alias];
+        },
+
+        addMouseListener: function (type, listener) {
+            this.context.canvas.addEventListener(type, listener, false);
+        },
+
+        addKeyListener: function (key, listener) {
+            this.keyboardListeners.push({ key: key, listener: listener });
+        },
+
+        keyPressed: function (e) {
+            var key = undefined;
+            var listener = undefined;
+
+            switch (e.keyCode) {
+                case 87: key = 'w'; break;
+                case 65: key = 'a'; break;
+                case 83: key = 's'; break;
+                case 68: key = 'd'; break;
+                case 81: key = 'q'; break;
+                case 69: key = 'e'; break;
+                case 90: key = 'z'; break;
+                case 88: key = 'x'; break;
+                case 74: key = 'j'; break;
+                case 75: key = 'k'; break;
+                case 82: key = 'r'; break;
+                case 37: key = 'left'; break;
+                case 39: key = 'right'; break;
+                case 38: key = 'up'; break;
+                case 40: key = 'down'; break;
+                case 32: key = 'space'; break;
+                case 13: key = 'enter'; break;
+            }
+
+            for (var i = 0; i < this.keyboardListeners.length; i++) {
+                var pair = this.keyboardListeners[i];
+                if (pair.key === key && pair.listener) {
+                    pair.listener();
+                    window.returnValue = false;
+                    break;
+                }
+            }
+        },
+
+        setState: function (state) {
+            this.stateManager.setState(state);
+        },
+    };
+
+    /*
+     *Game StateManager
+    */
+    core.StateManager = function (game) {
+        this.currentState = undefined;
+        this.game = game;
+    }
+
+    core.StateManager.prototype = {
+
+        setState: function (state) {
+            this.currentState && this.currentState.end(this.game);
+            this.currentState = state;
+            this.currentState.start(this.game);
+        },
+
+        update: function (deltaTime) {
+            this.currentState && this.currentState.update(deltaTime);
+        },
+
+        render: function (context) {
+            this.currentState && this.currentState.render(context);
         }
-    },
-};
+
+    };
+
+    /*
+     *Game State
+    */
+    core.State = function () { }
+
+    core.State.prototype = {
+
+        start: function (game) { },
+
+        end: function (game) { },
+
+        update: function (deltaTime) { },
+
+        render: function (context) { }
+    };
+
+})(Alistuff.fps, Alistuff.fps.graphics);
