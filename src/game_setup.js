@@ -7,11 +7,14 @@
         'src/texture.js',
         'src/entities/entities.js',
         'src/entities/player.js',
-        'src/level/gridMap.js',
+        'src/level/level.js',
+        'src/level/dungeonLevel.js',
+        'src/level/outsideLevel.js',
         'src/renderer/rayCaster.js',
         'src/renderer/rayCasterRenderer.js',
         'src/game.js',
-        'src/states/states.js',
+        'src/states/gameAnimation.js',
+        'src/states/gameLevel.js',
         'src/game_main.js'
     ];
 

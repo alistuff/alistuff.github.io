@@ -4,35 +4,21 @@
 (function (core, level,entities, render) {
 
     var game = new core.Game('canvas');
-    var map = new level.GridMap();
-    var player=new entities.Player(196, 196);
-    var raycaster = new render.RayCaster();
-    var lastmousex = 0;
 
     function startGameCallback(result) {
         if (result) {
+            document.getElementById('progressbar').innerText = '';
             game.start();
         } else {
-            alert('load game error');
+            alert('load game resources failed');
         }
     };
 
     function initGameCallback(context) {
-        player.height = map.gridSize / 2;
-        player.level = map;
-        map.player = player;
-
-        raycaster.init(0, 0, 480, 320, game, map, new render.PerPixelRenderer());
-        lastmousex = raycaster.x + raycaster.width / 2;
-
-        game.setState(new core.Animation1State());
+        game.setState(new core.GameAnimationState());
     };
 
     function updateGameCallback(time) {
-        updateDebugInfo();
-        player.update(time);
-        map.update(time);
-
         game.stateManager.update(time);
     };
 
@@ -40,71 +26,62 @@
         context.strokeStyle = 'black';
         context.lineWidth = 1;
         context.strokeRect(0, 0, context.canvas.width, context.canvas.height);
-
-        raycaster.render(context);
-     //   raycaster.render2d(context);
-
-      //  game.stateManager.render(context);
+        game.stateManager.render(context);
     };
 
-    function mouseMoveCallback(e) {
-        var l = game.windowToCanvas(e.clientX, e.clientY);
-        player.lookAround(l.x, l.y, raycaster.width, raycaster.height);
-    };
+    game.queueImage('wall0', 'res/tex/wall/wall0.png');
+    game.queueImage('wall0_blood', 'res/tex/wall/wall0_blood.png');
+    game.queueImage('wall0_cage', 'res/tex/wall/wall0_cage.png');
+    game.queueImage('wall0_door', 'res/tex/wall/wall0_door.png');
+    game.queueImage('wall0_einstein', 'res/tex/wall/wall0_einstein.png');
+    game.queueImage('wall0_msg', 'res/tex/wall/wall0_msg.png');
+    game.queueImage('wall0_radiator', 'res/tex/wall/wall0_radiator.png');
+    game.queueImage('wall0_russell', 'res/tex/wall/wall0_russell.png');
+    game.queueImage('wall0_sign', 'res/tex/wall/wall0_sign.png');
+    game.queueImage('wall0_wittgenstein', 'res/tex/wall/wall0_wittgenstein.png');
+    game.queueImage('wall1', 'res/tex/wall/wall1.png');
+    game.queueImage('wall1_crack', 'res/tex/wall/wall1_crack.png');
+    game.queueImage('wall1_hole', 'res/tex/wall/wall1_hole.png');
+    game.queueImage('wall1_lamp', 'res/tex/wall/wall1_lamp.png');
+    game.queueImage('wall1_window', 'res/tex/wall/wall1_window.png');
+    game.queueImage('wall1_wittgenstein', 'res/tex/wall/wall1_wittgenstein.png');
+    game.queueImage('wall2','res/tex/wall/wall2.png');
+    game.queueImage('wall2_water', 'res/tex/wall/wall2_water.png');
 
-    function updateDebugInfo() {
-        function $(a) { return document.getElementById(a); }
-        $('fpsvalue').innerText = game.getFps();
-        $('gametime').innerText = game.getGameTime();
-        $('planex').innerText = raycaster.x;
-        $('planey').innerText = raycaster.y;
-        $('planewidth').innerText = raycaster.width;
-        $('planeheight').innerText = raycaster.height;
-        $('planetoviewer').innerText = raycaster.distanceViewerToPlane.toFixed(2);
-        $('planeray').innerText = raycaster.dtAnglePerProjection.toFixed(2);
-        $('viewerx').innerText = player.x.toFixed(2);
-        $('viewery').innerText = player.y.toFixed(2)
-        $('viewera').innerText = player.rot.toFixed(2);
-        $('viewerf').innerText = player.fov;
-        $('viewerh').innerText = player.height;
-        $('mapwidth').innerText = map.width + '/' + map.realWidth;
-        $('mapheight').innerText = map.height + '/' + map.realHeight;
-        $('gridsize').innerText = map.gridSize;
-    };
+    game.queueImage('floor0', 'res/tex/floor/floor0.png');
+    game.queueImage('floor0_blood', 'res/tex/floor/floor0_blood.png');
 
-    game.queueImage('0', 'res/tex/tex1.png');
-    game.queueImage('1', 'res/tex/tex1.png');
-    game.queueImage('2', 'res/tex/tex2.png');
-    game.queueImage('3', 'res/tex/tex3.png');
-    game.queueImage('4', 'res/tex/tex4.png');
-    game.queueImage('5', 'res/tex/tex5.png');
-    game.queueImage('6', 'res/tex/tex6.png');
-    game.queueImage('7', 'res/tex/tex7.png');
-    game.queueImage('8', 'res/tex/tex8.png');
-    game.queueImage('9', 'res/tex/tex9.png');
-    game.queueImage('sky1', 'res/tex/tex9.png');
-    game.queueImage('sky2', 'res/tex/tex9.png');
-    game.queueImage('html5', 'res/tex/html5.png');
-    game.queueImage('java', 'res/tex/java.png');
-    game.queueImage('android', 'res/tex/android.png');
-    game.queueImage('awp', 'res/tex/awp.png');
-    game.queueImage('cross','res/tex/cross.png');
-    game.queueImage('Floor', 'res/tex/Floor.jpg');
-    game.queueImage('Wall+Blood', 'res/tex/Wall+Blood.jpg');
-    game.queueImage('Roof', 'res/tex/Roof.jpg');
+    game.queueImage('ceiling0', 'res/tex/ceiling/ceiling0.png');
+    game.queueImage('ceiling1', 'res/tex/ceiling/ceiling1.png');
 
-    game.loadImages(startGameCallback);
+    game.queueImage('enemy_android', 'res/tex/entity/enemy/enemy_android.png');
+    game.queueImage('enemy_html5', 'res/tex/entity/enemy/enemy_html5.png');
+    game.queueImage('enemy_java', 'res/tex/entity/enemy/enemy_java.png');
+    game.queueImage('enemy_skull', 'res/tex/entity/enemy/enemy_skull.png');
+    game.queueImage('enemy_ghost', 'res/tex/entity/enemy/enemy_ghost.png');
+
+    game.queueImage('item_chair', 'res/tex/entity/objects/chair.png');
+    game.queueImage('item_table', 'res/tex/entity/objects/table.png');
+    game.queueImage('item_computer', 'res/tex/entity/objects/computer.png');
+    game.queueImage('item_skull', 'res/tex/entity/objects/skull.png');
+    game.queueImage('item_tree', 'res/tex/entity/objects/tree.png');
+    game.queueImage('item_flower1', 'res/tex/entity/objects/flower1.png');
+    game.queueImage('item_flower2', 'res/tex/entity/objects/flower2.png');
+    game.queueImage('item_flower3', 'res/tex/entity/objects/flower3.png');
+    game.queueImage('item_cloud', 'res/tex/entity/objects/cloud.png');
+
+    game.queueImage('left_hand', 'res/tex/entity/weapon/left_hand.png');
+    game.queueImage('right_hand', 'res/tex/entity/weapon/right_hand.png');
+
+    game.queueImage('dungeonLevel', 'res/level/dungeonLevel.png');
+    game.queueImage('outsideLevel', 'res/level/outsideLevel.png');
+
+    game.loadImages(startGameCallback, function (e) {
+        document.getElementById('progressbar').innerText = 'loading:' + e + '%';
+    });
 
     game.init = initGameCallback;
     game.update = updateGameCallback;
     game.render = renderGameCallback;
-    game.addKeyListener('w', function () { player.turnUp(); });
-    game.addKeyListener('s', function () { player.turnDown(); });
-    game.addKeyListener('a', function () { player.turnLeft(); });
-    game.addKeyListener('d', function () { player.turnRight(); });
-    game.addKeyListener('q', function () { player.rotateLeft(); });
-    game.addKeyListener('e', function () { player.rotateRight(); });
-    game.addMouseListener('mousedown', function () { player.shoot(); });
-    game.addMouseListener('mousemove', mouseMoveCallback);
 
-})(Alistuff.fps, Alistuff.fps.level,Alistuff.fps.entities, Alistuff.fps.renderer);
+})(Alistuff.fps);

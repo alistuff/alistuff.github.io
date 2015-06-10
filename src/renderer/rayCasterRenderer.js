@@ -69,27 +69,26 @@
             var width = raycaster.width;
             var height = raycaster.height;
             var rotz = raycaster.rotz;
-
             var rays = raycaster.rays;
             var projections = raycaster.projections;
-
-            var map = raycaster.level;
-            var viewer = map.player;        
+            var level = raycaster.level;
 
             //draw sky
             this.render_sky(context, x, y, width, rotz);
             //draw floor
             this.render_floor(context, x, y + rotz, width, height - rotz);
-
+            
             for (var i = 0, j = projections.length; i < j; i++) {
                 var projection = projections[i];
                 if (projection != null) {
                     var ray = projection.ray;
-                    var texture = raycaster.game.getImage(
-                      map.getGrid(Math.floor((ray.x1) / map.gridSize), Math.floor((ray.y1) / map.gridSize) + ''));
+                    var ix = Math.floor((ray.x1) / level.gridSize);
+                    var iy = Math.floor((ray.y1) / level.gridSize);
+                    var wall = level.getWall(ix, iy);
+                    var texture = raycaster.game.getImage(wall);
                     context.drawImage(texture,
-                        ray.offset, 0, 1, texture.height,
-                        x + projection.x, projection.y, 1, projection.length);
+                        ray.offset * texture.width / level.gridSize, 0, 1, texture.height,
+                        x + projection.x, y+projection.y, 1, projection.length);
                 }
             }
 
@@ -113,46 +112,29 @@
                 }
             }
 
-            //weapon
-            var weapontex = raycaster.game.getImage(viewer.weapon.tex);
-            context.drawImage(weapontex,
-                raycaster.width - weapontex.width + viewer.weapon.x, raycaster.height - weapontex.height + viewer.weapon.y + 10,
-                weapontex.width, weapontex.height);
-
-            //cross
-            context.strokeStyle = 'rgb(0,255,0)';
-            context.beginPath();
-
-            context.moveTo(raycaster.width / 2 - 10, raycaster.height / 2);
-            context.lineTo(raycaster.width / 2 + 10, raycaster.height / 2);
-
-            context.moveTo(raycaster.width / 2, raycaster.height / 2 - 10);
-            context.lineTo(raycaster.width / 2, raycaster.height / 2 + 10);
-            context.stroke();
-
             //2d rays
-            context.fillStyle = 'rgba(255,255,255,0.8)';
-            context.lineWidth = 2;
-            context.strokeStyle = 'white';
-            var i = 0;
+            //context.fillStyle = 'rgba(255,255,255,0.8)';
+            //context.lineWidth = 2;
+            //context.strokeStyle = 'white';
+            //var i = 0;
 
-            context.beginPath();
-            for (; i < rays.length; i++) {
-                if (rays[i] != null) {
-                    context.moveTo((rays[i].x0 * 0.3), rays[i].y0 * 0.3);
-                    break;
-                }
-            }
+            //context.beginPath();
+            //for (; i < rays.length; i++) {
+            //    if (rays[i] != null) {
+            //        context.moveTo((rays[i].x0 * 0.3), rays[i].y0 * 0.3);
+            //        break;
+            //    }
+            //}
 
-            for (; i < rays.length; i++) {
-                var ray = rays[i];
-                if (ray != null) {
-                    context.lineTo((ray.x1 * 0.3), ray.y1 * 0.3);
-                }
-            }
+            //for (; i < rays.length; i++) {
+            //    var ray = rays[i];
+            //    if (ray != null) {
+            //        context.lineTo((ray.x1 * 0.3), ray.y1 * 0.3);
+            //    }
+            //}
 
-            context.closePath();
-            context.fill();
+            //context.closePath();
+            //context.fill();
         },
 
         render_sky: function (context, x,y,width,height) {
@@ -161,7 +143,7 @@
         },
 
         render_floor: function (context, x, y, width, height) {
-            context.fillStyle = 'gray';
+            context.fillStyle = 'rgb(192,192,192)';
             context.fillRect(x, y, width, height);
         },
     });
@@ -176,16 +158,10 @@
             var y = raycaster.y;
             var width = raycaster.width;
             var height = raycaster.height;
-            var deltaAngle=raycaster.dtAnglePerProjection;
-            var distViewerToPlane=raycaster.distanceViewerToPlane;
-            var level = raycaster.level;
-            var viewpoint = raycaster.height / 2 - level.player.rotz;
+            var rotz = raycaster.rotz;
             var rays = raycaster.rays;
             var projections=raycaster.projections;
-
-            var wall = raycaster.game.getTexture('Wall+Blood');
-            var floor = raycaster.game.getTexture('Floor');
-            var sky = raycaster.game.getTexture('Roof');
+            var level = raycaster.level;
 
             var imagedata = context.getImageData(x, y, width, height);
             var buffer = imagedata.data;
@@ -194,55 +170,80 @@
 
             var lightness = 90;
 
+            //render wall
             for (var i = 0; i < projections.length; i++) {
-                var rayAngle = (width / 2 - i) * deltaAngle;
+                var proj = projections[i];      
                 var start, end;
-                var proj = projections[i];
+                var ix, iy, scaleX, scaleY;
+                var wall, floor, ceiling;
+                var rayAngle = (width / 2 - i) * raycaster.dtAnglePerProjection;
+
                 if (proj != null) {
+                  
+                    ix = Math.floor(proj.ray.x1 / level.gridSize);
+                    iy = Math.floor(proj.ray.y1 / level.gridSize);
+                    wall = raycaster.game.getTexture(level.getWall(ix, iy));
+
+                    scaleX = wall.width / level.gridSize;
+                    scaleY = wall.height / proj.length;
+
                     start = proj.y;
                     end = proj.y + proj.length;
 
                     var light = 1 - Math.max(0, Math.min(1, proj.ray.length / lightness));
+
                     for (var j = Math.max(0, Math.floor(start)), k = Math.min(Math.floor(end), height) ; j <= k; j++) {
 
-                        var pixel = wall.getPixel(proj.ray.offset*wall.width/level.gridSize % wall.width,
-                            (j - Math.floor(proj.y)) * wall.height / proj.length % wall.height);
+                        ix = proj.ray.offset * scaleX;
+                        iy = (j - Math.floor(proj.y)) * scaleY;
 
-                        var index = Math.floor((j * imagedata.width * fy + i * fx) * 4);
-                        var alpha = pixel.a / 255;
-                        buffer[index] = (pixel.r * light) * alpha + (1 - alpha) * buffer[index];
-                        buffer[index + 1] = (pixel.g * light) * alpha + (1 - alpha) * buffer[index + 1];
-                        buffer[index + 2] = (pixel.b * light) * alpha + (1 - alpha) * buffer[index + 2];
-                        buffer[index + 3] = pixel.a * alpha + (1 - alpha) * buffer[index + 3];
+                        var col = wall.getPixel(ix % wall.width, iy % wall.height);
+
+                        var index = Math.floor(j * imagedata.width * fy + i * fx) << 2;
+                        buffer[index] = col.r * light;
+                        buffer[index + 1] = col.g * light;
+                        buffer[index + 2] = col.b * light;
+                        buffer[index + 3] = col.a;
                     }
                 }
-
+      
+                //render floor ceiling
                 for (var j = 0; j < height; j++) {
 
                     if (start && end && j > start && j < end) continue;
 
-                    var distViewerToFloor = distViewerToPlane * level.player.height / (j - viewpoint);
-                 
-                    distViewerToFloor = Math.abs(distViewerToFloor / Math.cos(rayAngle * PI_DIV_180));
+                    var distViewerToFloor = Math.abs(raycaster.distanceViewerToPlane * level.player.height /
+                        (j - rotz) / Math.cos(rayAngle * PI_DIV_180));
 
-                    var floorx = level.player.x +
-                        Math.cos((level.player.rot + rayAngle) * PI_DIV_180) * distViewerToFloor%level.gridSize;
-                    var floory = level.player.y -
-                        Math.sin((level.player.rot + rayAngle) * PI_DIV_180) * distViewerToFloor % level.gridSize;
+                    var angle = (level.player.rot + rayAngle) * PI_DIV_180;
+                    var floorX = level.player.x + Math.cos(angle) * distViewerToFloor;
+                    var floorY = level.player.y - Math.sin(angle) * distViewerToFloor;
 
-                    var rgba;
-                    if (j > viewpoint)
-                        rgba = floor.getPixel(floorx * floor.width / level.gridSize % floor.width, floory * floor.height / level.gridSize % floor.height);
-                    else
-                        rgba = sky.getPixel(floorx * sky.width / level.gridSize % sky.width, floory * sky.height / level.gridSize % sky.height);
+                    ix = Math.floor(floorX / level.gridSize);
+                    iy = Math.floor(floorY / level.gridSize);
+
+                    floor = raycaster.game.getTexture(level.getFloor(ix, iy));
+                    ceiling = raycaster.game.getTexture(level.getCeiling(ix, iy));
+
+                    var col;
+                    if (j > rotz) {
+                        ix = floorX % level.gridSize * floor.width / level.gridSize;
+                        iy = floorY % level.gridSize * floor.height / level.gridSize;
+                        col = floor.getPixel(ix % floor.width, iy % floor.height);
+                    }
+                    else {
+                        ix = floorX % level.gridSize * ceiling.width / level.gridSize;
+                        iy = floorY % level.gridSize * ceiling.height / level.gridSize;
+                        col = ceiling.getPixel(ix % ceiling.width, iy % ceiling.height);
+                    }
 
                     var light = 1 - Math.max(0, Math.min(1, distViewerToFloor / lightness));
-                    var index = Math.floor((j * imagedata.width * fy + i * fx) * 4);
 
-                    buffer[index] = rgba.r * light;
-                    buffer[index + 1] = rgba.g * light;
-                    buffer[index + 2] = rgba.b * light;
-                    buffer[index + 3] = rgba.a;
+                    var index = Math.floor(j * imagedata.width * fy + i * fx) << 2;
+                    buffer[index] = col.r * light;
+                    buffer[index + 1] = col.g * light;
+                    buffer[index + 2] = col.b * light;
+                    buffer[index + 3] = col.a;
                 }
             }
 
@@ -265,21 +266,19 @@
 
                             if (k < 0 || k >= height) continue;
 
-                            var pixel = texture.getPixel(proj.offset * scalew, (k - Math.floor(proj.y)) * scaleh);
-                            var index = Math.floor((k * imagedata.width * fy + proj.x * fx) * 4);
-                            var alpha = pixel.a / 255;
-                            buffer[index] = (pixel.r * light) * alpha + (1 - alpha) * buffer[index];
-                            buffer[index + 1] = (pixel.g * light) * alpha + (1 - alpha) * buffer[index + 1];
-                            buffer[index + 2] = (pixel.b * light) * alpha + (1 - alpha) * buffer[index + 2];
-                            buffer[index + 3] = pixel.a * alpha + (1 - alpha) * buffer[index + 3];
+                            var col = texture.getPixel(proj.offset * scalew, (k - Math.floor(proj.y)) * scaleh);
+                            var index = Math.floor(k * imagedata.width * fy + proj.x * fx) << 2;
+                            var alpha = col.a / 255;
+                            buffer[index] = (col.r * light) * alpha + (1 - alpha) * buffer[index];
+                            buffer[index + 1] = (col.g * light) * alpha + (1 - alpha) * buffer[index + 1];
+                            buffer[index + 2] = (col.b * light) * alpha + (1 - alpha) * buffer[index + 2];
+                            buffer[index + 3] = col.a * alpha + (1 - alpha) * buffer[index + 3];
                         }
                     }
                 }
             }
 
             context.putImageData(imagedata, x, y);
-
-
         },
     });
 

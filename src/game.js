@@ -25,6 +25,14 @@
         this.failedCounter = 0;
         this.textures = {};
 
+        this.audio = new Audio();
+        this.soundChannels = [];
+        this.soundQueue = [];
+        this.MAX_SOUND_CHANNELS = 10;
+        for (var i = 0; i < this.MAX_SOUND_CHANNELS; i++) {
+            this.soundChannels.push(new Audio());
+        }
+
         self = this;
         this.keyboardListeners = [];
         window.onkeydown = function (e) { self.keyPressed(e); };
@@ -118,7 +126,7 @@
         },
 
         flip: function () {
-            this.context.drawImage(this.offscreenContext.canvas, 0, 0, this.offscreenContext.canvas.width, this.offscreenContext.canvas.height);
+            this.context.drawImage(this.offscreenContext.canvas, 0, 0, this.context.canvas.width, this.context.canvas.height);
         },
 
         queueImage: function (alias, imageUrl) {
@@ -139,7 +147,7 @@
 
                 image.addEventListener('load', function (i) {
                     self.succeedCounter++;
-                    load && load(this.src + ' load success!');
+                    load && load((self.succeedCounter + self.failedCounter) / length * 100);
                     if (self.loadCompleted()) {
                         loadCompletedCallback(self.succeedCounter == length ? true : false);
                     }
@@ -172,12 +180,124 @@
             return this.textures[alias];
         },
 
+        canPlayOgg:function(){
+            return this.audio.canPlayType('audio/ogg; codecs="vorbis"') != '';
+        },
+
+        canPlayMp4:function(){
+            return this.audio.canPlayType('audio/mp4') != '';
+        },
+
+        getSoundChannel:function(){
+            var audio;
+
+            for (var i = 0; i < this.MAX_SOUND_CHANNELS; i++) {
+                audio = this.soundChannels[i];
+                if (audio.played && audio.played.length > 0) {
+                    if (audio.ended) {
+                        return i + 1;
+                    }
+                }
+                else {
+                    if (!this.soundLoading(i) && !audio.ended) {
+                        return i + 1;
+                    }
+                }
+            }
+            return undefined;
+        },
+
+        soundLoading:function(channel){
+            for (var i = 0; i < this.soundQueue.length; i++) {
+                if (this.soundQueue[i] === channel) {
+                    return true;
+                }
+            }
+            return false;
+        },
+
+        playSound:function(url,loop){
+            var channel = this.getSoundChannel();
+            var element = document.getElementById(url);
+
+            if (channel) {
+                console.log(channel);
+                var index = channel - 1;
+                var audio = this.soundChannels[index];
+
+                self = this;
+                this.soundQueue.push(index);
+
+                function loadCompleted(channelIndex) {
+                    if (this.soundLoading(channelIndex)) {
+                        this.soundQueue.splice(i, 1);
+                    }
+                };
+
+                audio.addEventListener('canPlay', function () { loadCompleted.call(self, index); });
+                audio.addEventListener('error', function () { loadCompleted.call(self, index); });
+                audio.addEventListener('abort', function () { loadCompleted.call(self, index); });
+     
+                if (element) {
+                    audio.src = element.src === '' ? element.currentSrc : element.src;
+                }
+                else {
+                    audio.src = url;
+                }
+                audio.load();
+                audio.play();
+                audio.loop = loop;
+
+                return channel;
+            }
+            return undefined;
+        },
+
+        pauseSound: function (id) {
+            if (id && id <= this.MAX_SOUND_CHANNELS) {
+                var audio = this.soundChannels[id-1];
+                audio.pause();
+                return id;
+            }
+            return undefined;
+        },
+
+        resumeSound:function(id){
+            if (id && id <= this.MAX_SOUND_CHANNELS) {
+                var audio = this.soundChannels[id - 1];
+                audio.play();
+                return id;
+            }
+            return undefined;
+        },
+
+        stopSound: function (id) {
+            if (id && id <= this.MAX_SOUND_CHANNELS) {
+                var audio = this.soundChannels[id - 1];
+                audio.src = '';
+            }
+            return undefined;
+        },
+
         addMouseListener: function (type, listener) {
             this.context.canvas.addEventListener(type, listener, false);
         },
 
+        removeMouseListener: function (type, listener) {
+            this.context.canvas.removeEventListener(type, listener, false);
+        },
+
         addKeyListener: function (key, listener) {
             this.keyboardListeners.push({ key: key, listener: listener });
+        },
+
+        removeKeyListener: function (key, listener) {
+            for (var i = 0; i < this.keyboardListeners.length; i++) {
+                var pair = this.keyboardListeners[i];
+                if (pair.key === key) {
+                    this.keyboardListeners.splice(i--, 1);
+                }
+            }
         },
 
         keyPressed: function (e) {
@@ -225,22 +345,29 @@
     core.StateManager = function (game) {
         this.currentState = undefined;
         this.game = game;
+        this.updated = false;
     }
 
     core.StateManager.prototype = {
 
-        setState: function (state) {
+        setState: function (state) {          
             this.currentState && this.currentState.end(this.game);
             this.currentState = state;
             this.currentState.start(this.game);
+            this.updated = false;
         },
 
         update: function (deltaTime) {
+            this.updated = true;
             this.currentState && this.currentState.update(deltaTime);
         },
 
         render: function (context) {
-            this.currentState && this.currentState.render(context);
+            if (this.updated) {
+                this.currentState && this.currentState.render(context);
+            } else {
+                this.currentState && this.currentState.transitionRender(context);
+            }
         }
 
     };
@@ -258,7 +385,11 @@
 
         update: function (deltaTime) { },
 
-        render: function (context) { }
+        render: function (context) { },
+
+        transitionRender: function (context) {
+
+        },
     };
 
 })(Alistuff.fps, Alistuff.fps.graphics);

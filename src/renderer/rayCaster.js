@@ -97,7 +97,7 @@ var PI_DIV_180 = Math.PI / 180;
                         y0: y,
                         x1: startX,
                         y1: startY,
-                        offset: startX % map.gridSize,
+                        offset: faceUp ? startX % map.gridSize : (map.gridSize - startX % map.gridSize),
                         length: Math.sqrt((x - startX) * (x - startX) + (y - startY) * (y - startY))
                     };
                 }
@@ -133,7 +133,7 @@ var PI_DIV_180 = Math.PI / 180;
                         y0: y,
                         x1: startX,
                         y1: startY,
-                        offset: startY % map.gridSize,
+                        offset: faceLeft ? (map.gridSize-startY % map.gridSize) : startY % map.gridSize,
                         length: Math.sqrt((x - startX) * (x - startX) + (y - startY) * (y - startY))
                     };
                 }
@@ -384,7 +384,7 @@ var PI_DIV_180 = Math.PI / 180;
             context.rect(this.x, this.y, this.width, this.height);
             context.clip();
             context.closePath();
-            this.renderer.render(context, this);
+            this.renderer && this.renderer.render(context, this);
             context.restore();
         },
 

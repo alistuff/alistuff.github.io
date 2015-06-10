@@ -104,6 +104,11 @@
 
     ns.Texture.prototype = {
 
+        getRGBHex:function(x,y){
+            var pixel = this.getPixel(x, y);
+            return (pixel.r << 16) + (pixel.g << 8) + (pixel.b);
+        },
+
         getPixel: function (x, y) {
             x = Math.floor(x);
             y = Math.floor(y);

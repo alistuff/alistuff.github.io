@@ -142,6 +142,21 @@ Alistuff.animation = Alistuff.animation || {};
 
     Alistuff.ext(ns.EmptyAnimation, ns.Animation);
 
+    ns.CallbackAnimation = function (callback, removed) {
+        ns.Animation.call(this);
+        this.callback = callback;
+        this.removed = removed || true;
+    }
+
+    Alistuff.ext(ns.CallbackAnimation, ns.Animation, {
+        animate: function (animationTime, deltaTime, actor) {
+            if (this.callback) {
+                this.callback(actor);
+                actor.removed = this.removed;
+            }
+        },
+    });
+
     //Animation -TranslateAnimation
     ns.TranslateAnimation = function (dx,dy) {
         ns.Animation.call(this);
@@ -288,5 +303,4 @@ Alistuff.animation = Alistuff.animation || {};
             }
         },
     });
-
 })(Alistuff.animation);
